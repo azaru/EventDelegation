@@ -9,45 +9,79 @@
         return false;
 
     if(!handlers[eventType]){
-      handlers[eventType] = {};
+      handlers[eventType] = [];
       document.addEventListener(eventType, _trigger);
     }
-
-    if(!handlers[eventType][selector]){
-      handlers[eventType][selector] = [];
+    
+    for(var i in handlers[eventType]){
+      if(_match(handlers[eventType][i].selector, selector, false)){
+        handlers[eventType][i].callbacks.push(handler);
+        return ;
+      }
     }
-    handlers[eventType][selector].push(handler);
+
+    handlers[eventType].push({"selector": selector, "callbacks": [handler]});
+     
   }
 
   EventDelegation.off = function(eventType, selector, handler){
     if(!selector)
       return false;
 
-    if(handlers[eventType] && handlers[eventType][selector])
-      var selectors = handlers[eventType][selector]
-      for(var i = selectors.length - 1; i >= 0; i--) {
-        if(!handler || selectors[i] === handler) {
-         selectors.splice(i, 1);
-        }
-      }
-
-      if(!selectors){
-        document.removeEventListener(eventType, _trigger);
-        delete handlers[eventType];
+    var callbacks = [];
+    for(var i in handlers[eventType]){
+      if(_match(handlers[eventType][i].selector, selector, false)){
+        callbacks = _removeHandler(handlers[eventType][i].callbacks, handler);  
       }
     }
+
+    if(callbacks.length == 0){
+      document.removeEventListener(eventType, _trigger);
+      delete handlers[eventType];
+    }
+  }
+
+  var _removeHandler  = function(callbacks, handler){
+    for(var x = callbacks.length - 1; x >= 0; x--) {
+        if(!handler || callbacks[x] === handler) {
+          callbacks.splice(x, 1);
+        }
+    }
+    return callbacks;
+  }
+
   var _matcher = Element.prototype.matches || Element.prototype.webkitMatchesSelector
     || Element.prototype.mozMatchesSelector || Element.prototype.msMatchesSelector 
     || Element.prototype.oMatchesSelector;  
+  
+  var _match = function(target, selector, matcher){
+      if(typeof selector == typeof target){
+        if(typeof selector == 'object'){
+          return target.isSameNode(selector);
+        }else{
+          return target == selector;
+        }
+      }else if(matcher){ 
+        return target[_matcher.name](selector);
+      }else{
+        return false
+      }
+  }
+
+  var _applyHandlers = function(callbacks, target, args){
+    for(var i=0; i < callbacks.length; i++){
+        callbacks[i].apply(target, args);
+    }
+  }
 
   var _trigger = function(event){
     if(handlers[event.type]){
       var args = Array.prototype.slice.call(arguments);
-      for(var key in handlers[event.type]){
-        if(event.target[_matcher.name](key)){
-          for(var i=0; i < handlers[event.type][key].length; i++){
-            handlers[event.type][key][i].apply(event.target, args);
-          }
+      var _handlers = handlers[event.type];
+
+      for(var key in handlers[event.type]){   
+        if(_match(event.target, _handlers[key].selector, true)){
+          _applyHandlers(_handlers[key].callbacks, event.target, args);
         }
       }
     }
