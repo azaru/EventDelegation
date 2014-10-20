@@ -2,6 +2,9 @@
 (function(){
   var EventDelegation = {};
   var handlers = {};
+  var _matcher = Element.prototype.matches || Element.prototype.webkitMatchesSelector
+    || Element.prototype.mozMatchesSelector || Element.prototype.msMatchesSelector 
+    || Element.prototype.oMatchesSelector;
   
   EventDelegation.on = function(eventType ,selector ,handler){
 
@@ -31,13 +34,23 @@
     var callbacks = [];
     for(var i in handlers[eventType]){
       if(_match(handlers[eventType][i].selector, selector, false)){
-        callbacks = _removeHandler(handlers[eventType][i].callbacks, handler);  
+        _removeHandler(handlers[eventType][i].callbacks, handler); 
+      }
+      callbacks = callbacks.concat(handlers[eventType][i].callbacks);
+      if(handlers[eventType][i].callbacks.length == 0){
+          handlers[eventType].splice(i, 1);
       }
     }
 
     if(callbacks.length == 0){
       document.removeEventListener(eventType, _trigger);
       delete handlers[eventType];
+    }
+  }
+
+  EventDelegation.removeAllFor = function(selector){
+    for(var key in handlers){
+      EventDelegation.off(key, selector);
     }
   }
 
@@ -48,11 +61,7 @@
         }
     }
     return callbacks;
-  }
-
-  var _matcher = Element.prototype.matches || Element.prototype.webkitMatchesSelector
-    || Element.prototype.mozMatchesSelector || Element.prototype.msMatchesSelector 
-    || Element.prototype.oMatchesSelector;  
+  }    
   
   var _match = function(target, selector, matcher){
       if(typeof selector == typeof target){
