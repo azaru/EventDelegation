@@ -5,19 +5,20 @@
   var _matcher = Element.prototype.matches || Element.prototype.webkitMatchesSelector
     || Element.prototype.mozMatchesSelector || Element.prototype.msMatchesSelector 
     || Element.prototype.oMatchesSelector;
+
+  document.addEventListener('DOMNodeRemoved', function(event){
+    EventDelegation.removeAllFor(event.target);
+  });
   
   EventDelegation.on = function(eventType ,selector ,handler){
 
     if(!handler || typeof(handler) != 'function')
         return false;
 
-    if(!handlers[eventType]){
-      handlers[eventType] = [];
-      document.addEventListener(eventType, _trigger);
-    }
+    _addListenerIfNeeded(eventType);
     
     for(var i in handlers[eventType]){
-      if(_match(handlers[eventType][i].selector, selector, false)){
+      if(_match(selector, handlers[eventType][i].selector, false)){
         handlers[eventType][i].callbacks.push(handler);
         return ;
       }
@@ -33,7 +34,7 @@
 
     var callbacks = [];
     for(var i in handlers[eventType]){
-      if(_match(handlers[eventType][i].selector, selector, false)){
+      if(_match(selector, handlers[eventType][i].selector, false)){
         _removeHandler(handlers[eventType][i].callbacks, handler); 
       }
       callbacks = callbacks.concat(handlers[eventType][i].callbacks);
@@ -43,14 +44,31 @@
     }
 
     if(callbacks.length == 0){
-      document.removeEventListener(eventType, _trigger);
-      delete handlers[eventType];
+      _removeEventListener(eventType);
+    }
+  }
+
+  var _removeEventListener = function(eventType){
+    document.removeEventListener(eventType, _trigger);
+    delete handlers[eventType];
+  }
+
+  EventDelegation.removeAllEvents = function(){
+    for(var eventType in handlers){
+      _removeEventListener(eventType);
     }
   }
 
   EventDelegation.removeAllFor = function(selector){
     for(var key in handlers){
       EventDelegation.off(key, selector);
+    }
+  }
+
+  var _addListenerIfNeeded = function(eventType){
+    if(!handlers[eventType]){
+      handlers[eventType] = [];
+      document.addEventListener(eventType, _trigger);
     }
   }
 
@@ -88,7 +106,7 @@
       var args = Array.prototype.slice.call(arguments);
       var _handlers = handlers[event.type];
 
-      for(var key in handlers[event.type]){   
+      for(var key in _handlers){   
         if(_match(event.target, _handlers[key].selector, true)){
           _applyHandlers(_handlers[key].callbacks, event.target, args);
         }
@@ -97,4 +115,5 @@
   }
 
   window.events = EventDelegation;
+  window.events.handlers = handlers;
 })();
