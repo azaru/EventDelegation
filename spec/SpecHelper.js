@@ -5,13 +5,13 @@ function addNewNode(nodeType, id, parent){
   return node;
 }
 
-  afterEach(function(){
-      events.removeAllEvents();
-      var out = document.getElementById('out');
-      if(out){out.remove();}
-  });
+afterEach(function(){
+  events.removeAllEvents();
+  var out = document.getElementById('out');
+  if(out){out.remove();}
+});
 
-  beforeEach(function(){
-    var nodeOut = addNewNode('span', 'out', document.body);
-    addNewNode('span', 'in', nodeOut);
-  });
+beforeEach(function(){
+  var nodeOut = addNewNode('span', 'out', document.body);
+  addNewNode('span', 'in', nodeOut);
+});

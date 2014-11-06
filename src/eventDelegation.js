@@ -1,19 +1,14 @@
-'use strict';
 (function(){
+  'use strict';
   var EventDelegation = {};
   var handlers = {};
   var _matcher = Element.prototype.matches || Element.prototype.webkitMatchesSelector
     || Element.prototype.mozMatchesSelector || Element.prototype.msMatchesSelector 
     || Element.prototype.oMatchesSelector;
 
-  document.addEventListener('DOMNodeRemoved', function(event){
-    EventDelegation.removeAllFor(event.target);
-  });
-  
   EventDelegation.on = function(eventType ,selector ,handler){
 
-    if(!handler || typeof(handler) != 'function')
-        return false;
+    _paramsCheck(arguments, 3);
 
     _addListenerIfNeeded(eventType);
     
@@ -26,11 +21,11 @@
 
     handlers[eventType].push({"selector": selector, "callbacks": [handler]});
      
-  }
+  };
 
   EventDelegation.off = function(eventType, selector, handler){
-    if(!selector)
-      return false;
+    
+    _paramsCheck(arguments, 2);
 
     var callbacks = [];
     for(var i in handlers[eventType]){
@@ -38,39 +33,53 @@
         _removeHandler(handlers[eventType][i].callbacks, handler); 
       }
       callbacks = callbacks.concat(handlers[eventType][i].callbacks);
-      if(handlers[eventType][i].callbacks.length == 0){
+      if(handlers[eventType][i].callbacks.length === 0){
           handlers[eventType].splice(i, 1);
       }
     }
 
-    if(callbacks.length == 0){
+    if(callbacks.length === 0){
       _removeEventListener(eventType);
     }
-  }
-
-  var _removeEventListener = function(eventType){
-    document.removeEventListener(eventType, _trigger);
-    delete handlers[eventType];
-  }
+  };
 
   EventDelegation.removeAllEvents = function(){
     for(var eventType in handlers){
       _removeEventListener(eventType);
     }
-  }
+  };
 
   EventDelegation.removeAllFor = function(selector){
+    _paramsCheck(arguments, 1);
+
     for(var key in handlers){
       EventDelegation.off(key, selector);
     }
-  }
+  };
+
+  var _paramsCheck = function(args, num){
+    if(args.length < num)
+      throw new Error('Invalid number of arguments');
+
+    var permitedArgs = [['string'], ['string', 'object'], ['function']];
+    for(var i=0; i < num - 1; i++){
+      if(permitedArgs[i].indexOf(typeof(args[i]))<0){
+        throw new Error('Invalid argument type');
+      }   
+    }
+  };
+
+  var _removeEventListener = function(eventType){
+    document.removeEventListener(eventType, _trigger);
+    delete handlers[eventType];
+  };
 
   var _addListenerIfNeeded = function(eventType){
     if(!handlers[eventType]){
       handlers[eventType] = [];
       document.addEventListener(eventType, _trigger);
     }
-  }
+  };
 
   var _removeHandler  = function(callbacks, handler){
     for(var x = callbacks.length - 1; x >= 0; x--) {
@@ -79,7 +88,7 @@
         }
     }
     return callbacks;
-  }    
+  };    
   
   var _match = function(target, selector, matcher){
       if(typeof selector == typeof target){
@@ -91,15 +100,15 @@
       }else if(matcher){ 
         return target[_matcher.name](selector);
       }else{
-        return false
+        return false;
       }
-  }
+  };
 
   var _applyHandlers = function(callbacks, target, args){
     for(var i=0; i < callbacks.length; i++){
         callbacks[i].apply(target, args);
     }
-  }
+  };
 
   var _trigger = function(event){
     if(handlers[event.type]){
@@ -112,8 +121,18 @@
         }
       }
     }
-  }
+  };
 
+  document.addEventListener('DOMNodeRemoved', function(event){
+    EventDelegation.removeAllFor(event.target);
+  });
+
+  Object.defineProperty(EventDelegation, 'handlers', {
+    get: function(){
+      return handlers;
+    }
+  });
+
+  Object.freeze(EventDelegation);
   window.events = EventDelegation;
-  window.events.handlers = handlers;
 })();

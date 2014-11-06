@@ -120,4 +120,166 @@ describe("Event Delegation - ", function() {
     });
 
   });
+  
+  describe('Trigger callbacks', function(){
+    var out;
+
+    beforeEach(function(){
+      out =  document.getElementById('out');
+    });
+
+    it('Should be able to trigger a callback when the event is fired - HTML Element', function(){
+      var trigger = false;
+      events.on('click', out, function(){
+        trigger = true;
+      });
+      out.click();
+      expect(trigger).toEqual(true);
+    });
+
+    it('Should be able to trigger a callback when the event is fired - CSS Selector', function(){
+      var trigger = false;
+      events.on('click', '#out', function(){
+        trigger = true;
+      });
+      out.click();
+      expect(trigger).toEqual(true);
+    });
+
+    it("Shouldn't be able to trigger a callback without the event - HTML Element", function(){
+      var trigger = false;
+      events.on('click', out, function(){
+        trigger = true;
+      });
+      expect(trigger).toEqual(false);
+    });
+    it("Shouldn't be able to trigger a callback without the event - CSS Selector", function(){
+      var trigger = false;
+      events.on('click', '#out', function(){
+        trigger = true;
+      });
+      expect(trigger).toEqual(false);
+    });
+
+    it("Shouldn't be able to trigger a callback without the event (even with childred firing it) - HTML Element", function(){
+      var trigger = false;
+      events.on('click', out, function(){
+        trigger = true;
+      });
+      var inner = document.getElementById('in');
+      inner.click();
+      expect(trigger).toEqual(false);
+    });
+
+    it("Shouldn't be able to trigger a callback without the event (even with childred firing it) - CSS Selector", function(){
+      var trigger = false;
+      events.on('click', '#out', function(){
+        trigger = true;
+      });
+      var inner = document.getElementById('in');
+      inner.click();
+      expect(trigger).toEqual(false);
+    });
+
+    it("Shouldn't be able to trigger a callback without the event (even with parent firing it) - HTML Element", function(){
+      var trigger = false;
+      var inner = document.getElementById('in');
+      events.on('click', inner, function(){
+        trigger = true;
+      });
+      
+      out.click();
+      expect(trigger).toEqual(false);
+    });
+
+    it("Shouldn't be able to trigger a callback without the event (even with parent firing it) - CSS Selector", function(){
+      var trigger = false;
+      var inner = document.getElementById('in');
+      events.on('click', '#in', function(){
+        trigger = true;
+      });
+      
+      out.click();
+      expect(trigger).toEqual(false);
+    });
+
+     it("Should be able to trigger more than one callback - HTML Elements", function(){
+      var trigger = false, trigger2 = false;
+      events.on('click', out, function(){
+        trigger = true;
+      });
+      events.on('click', out, function(){
+        trigger2 = true;
+      });
+      
+      out.click();
+      expect(trigger && trigger2).toEqual(true);
+    });
+     it("Should be able to trigger more than one callback - CSS Selectors", function(){
+      var trigger = false, trigger2 = false;
+      events.on('click', '#out', function(){
+        trigger = true;
+      });
+      events.on('click', '#out', function(){
+        trigger2 = true;
+      });
+      
+      out.click();
+      expect(trigger && trigger2).toEqual(true);
+    });
+
+  });
+
+  describe("Internals", function(){
+    it('Internal handlers is read only',function(){
+      events.handlers = undefined;
+      expect(events.handlers).not.toEqual(undefined)
+    });
+    it('.on internal function is read only',function(){
+      events.on = undefined;
+      expect(events.on).not.toEqual(undefined);
+    });
+
+    it('.off internal function is read only',function(){
+      events.off = undefined;
+      expect(events.off).not.toEqual(undefined);
+    });
+
+    it('.removeAllEvents internal function is read only',function(){
+      events.removeAllEvents = undefined;
+      expect(events.removeAllEvents).not.toEqual(undefined);
+    });
+
+    it('.removeAllFor internal function is read only',function(){
+      events.removeAllFor = undefined;
+      expect(events.removeAllFor).not.toEqual(undefined);
+    });
+
+    it('.on raise an error with less than 3 parameters',function(){
+      var onClickWith1Args = function(){
+        events.on('click');
+      }
+      var onClickWith2Args = function(){
+        events.on('click','#in');
+      }
+      expect(onClickWith1Args).toThrow();
+      expect(onClickWith2Args).toThrow();
+    });
+
+    it('.off raise an error with less than 2 parameters',function(){
+      var offClickWith1Args = function(){
+        events.off('click');
+      }
+      expect(offClickWith1Args).toThrow();
+    });
+
+    it('.removeAllFor raise an error with less than 3 parameters',function(){
+      var removeAllForWith0Args = function(){
+        events.removeAllFor();
+      }
+      expect(removeAllForWith0Args).toThrow();
+    });
+
+  });
+
 });
