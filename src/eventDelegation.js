@@ -7,38 +7,15 @@
     || Element.prototype.oMatchesSelector;
 
   EventDelegation.on = function(eventType ,selector ,handler){
-
     _paramsCheck(arguments, 3);
-
     _addListenerIfNeeded(eventType);
-    
-    for(var i in handlers[eventType]){
-      if(_match(selector, handlers[eventType][i].selector, false)){
-        handlers[eventType][i].callbacks.push(handler);
-        return ;
-      }
-    }
-
-    handlers[eventType].push({"selector": selector, "callbacks": [handler]});
-     
+    _addHandlerToSelector(eventType, selector, handler);
   };
 
   EventDelegation.off = function(eventType, selector, handler){
-    
     _paramsCheck(arguments, 2);
-
-    var callbacks = [];
-    for(var i in handlers[eventType]){
-      if(_match(selector, handlers[eventType][i].selector, false)){
-        _removeHandler(handlers[eventType][i].callbacks, handler); 
-      }
-      callbacks = callbacks.concat(handlers[eventType][i].callbacks);
-      if(handlers[eventType][i].callbacks.length === 0){
-          handlers[eventType].splice(i, 1);
-      }
-    }
-
-    if(callbacks.length === 0){
+    var allRemoved = _removeHandlersFromSelectors(eventType, selector, handler);
+    if(allRemoved){
       _removeEventListener(eventType);
     }
   };
@@ -56,6 +33,31 @@
       EventDelegation.off(key, selector);
     }
   };
+
+  var _removeHandlersFromSelectors = function(eventType, selector, handler){
+    var callbacks = [];
+    for(var i in handlers[eventType]){
+      if(_match(selector, handlers[eventType][i].selector, false)){
+        _removeHandler(handlers[eventType][i].callbacks, handler); 
+      }
+      callbacks = callbacks.concat(handlers[eventType][i].callbacks);
+      if(handlers[eventType][i].callbacks.length === 0){
+          handlers[eventType].splice(i, 1);
+      }
+    }
+    return callbacks.length === 0;
+  }
+
+  var _addHandlerToSelector = function(eventType, selector, handler){
+    for(var i in handlers[eventType]){
+      if(_match(selector, handlers[eventType][i].selector, false)){
+        handlers[eventType][i].callbacks.push(handler);
+        return ;
+      }
+    }
+
+    handlers[eventType].push({"selector": selector, "callbacks": [handler]});
+  }
 
   var _paramsCheck = function(args, num){
     if(args.length < num)
@@ -129,7 +131,7 @@
 
   Object.defineProperty(EventDelegation, 'handlers', {
     get: function(){
-      return handlers;
+      return Object.create(handlers);
     }
   });
 

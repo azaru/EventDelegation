@@ -232,9 +232,13 @@ describe("Event Delegation - ", function() {
 
   describe("Internals", function(){
     it('Internal handlers is read only',function(){
+      events.on('click','#out',function(){ console.log('la');});
       events.handlers = undefined;
+      events.handlers.click = undefined;
       expect(events.handlers).not.toEqual(undefined)
+      expect(events.handlers.click).not.toEqual(undefined)
     });
+    
     it('.on internal function is read only',function(){
       events.on = undefined;
       expect(events.on).not.toEqual(undefined);
