@@ -14,4 +14,5 @@ afterEach(function(){
 beforeEach(function(){
   var nodeOut = addNewNode('span', 'out', document.body);
   addNewNode('span', 'in', nodeOut);
+  window.events = new EventDelegation();
 });

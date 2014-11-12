@@ -1,62 +1,61 @@
 (function(){
   'use strict';
-  var EventDelegation = {};
-  var handlers = {};
+  
   var _matcher = Element.prototype.matches || Element.prototype.webkitMatchesSelector
     || Element.prototype.mozMatchesSelector || Element.prototype.msMatchesSelector 
     || Element.prototype.oMatchesSelector;
 
-  EventDelegation.on = function(eventType ,selector ,handler){
-    _paramsCheck(arguments, 3);
-    _addListenerIfNeeded(eventType);
-    _addHandlerToSelector(eventType, selector, handler);
+  var _on = function (eventType ,selector ,handler){
+    _paramsCheck.call(this, arguments, 3);
+    _addListenerIfNeeded.call(this, eventType);
+    _addHandlerToSelector.call(this, eventType, selector, handler);
   };
 
-  EventDelegation.off = function(eventType, selector, handler){
+  var _off= function (eventType, selector, handler){
     _paramsCheck(arguments, 2);
-    var allRemoved = _removeHandlersFromSelectors(eventType, selector, handler);
+    var allRemoved = _removeHandlersFromSelectors.call(this, eventType, selector, handler);
     if(allRemoved){
-      _removeEventListener(eventType);
+      _removeEventListener.call(this, eventType);
     }
   };
 
-  EventDelegation.removeAllEvents = function(){
-    for(var eventType in handlers){
-      _removeEventListener(eventType);
+  var _removeAllEvents = function (){
+    for(var eventType in this.handlers){
+      _removeEventListener.call(this, eventType);
     }
   };
 
-  EventDelegation.removeAllFor = function(selector){
+  var _removeAllFor = function (selector){
     _paramsCheck(arguments, 1);
 
-    for(var key in handlers){
-      EventDelegation.off(key, selector);
+    for(var key in this.handlers){
+      _off.call(this, key, selector);
     }
   };
 
   var _removeHandlersFromSelectors = function(eventType, selector, handler){
     var callbacks = [];
-    for(var i in handlers[eventType]){
-      if(_match(selector, handlers[eventType][i].selector, false)){
-        _removeHandler(handlers[eventType][i].callbacks, handler); 
+    for(var i in this.handlers[eventType]){
+      if(_match(selector, this.handlers[eventType][i].selector, false)){
+        _removeHandler(this.handlers[eventType][i].callbacks, handler); 
       }
-      callbacks = callbacks.concat(handlers[eventType][i].callbacks);
-      if(handlers[eventType][i].callbacks.length === 0){
-          handlers[eventType].splice(i, 1);
+      callbacks = callbacks.concat(this.handlers[eventType][i].callbacks);
+      if(this.handlers[eventType][i].callbacks.length === 0){
+          this.handlers[eventType].splice(i, 1);
       }
     }
     return callbacks.length === 0;
   }
 
   var _addHandlerToSelector = function(eventType, selector, handler){
-    for(var i in handlers[eventType]){
-      if(_match(selector, handlers[eventType][i].selector, false)){
-        handlers[eventType][i].callbacks.push(handler);
+    for(var i in this.handlers[eventType]){
+      if(_match(selector, this.handlers[eventType][i].selector, false)){
+        this.handlers[eventType][i].callbacks.push(handler);
         return ;
       }
     }
 
-    handlers[eventType].push({"selector": selector, "callbacks": [handler]});
+    this.handlers[eventType].push({"selector": selector, "callbacks": [handler]});
   }
 
   var _paramsCheck = function(args, num){
@@ -72,14 +71,14 @@
   };
 
   var _removeEventListener = function(eventType){
-    document.removeEventListener(eventType, _trigger);
-    delete handlers[eventType];
+    document.removeEventListener(eventType, _trigger.bind(this));
+    delete this.handlers[eventType];
   };
 
   var _addListenerIfNeeded = function(eventType){
-    if(!handlers[eventType]){
-      handlers[eventType] = [];
-      document.addEventListener(eventType, _trigger);
+    if(!this.handlers[eventType]){
+      this.handlers[eventType] = [];
+      document.addEventListener(eventType, _trigger.bind(this));
     }
   };
 
@@ -113,9 +112,9 @@
   };
 
   var _trigger = function(event){
-    if(handlers[event.type]){
+    if(this.handlers[event.type]){
       var args = Array.prototype.slice.call(arguments);
-      var _handlers = handlers[event.type];
+      var _handlers = this.handlers[event.type];
 
       for(var key in _handlers){   
         if(_match(event.target, _handlers[key].selector, true)){
@@ -125,16 +124,19 @@
     }
   };
 
-  document.addEventListener('DOMNodeRemoved', function(event){
-    EventDelegation.removeAllFor(event.target);
-  });
+  var EventDelegation = function(rootNode){
+      this.rootNode = rootNode || document;
+      this.handlers = {};
+      this.rootNode.addEventListener('DOMNodeRemoved', (function(event){
+        _removeAllFor.call(this, event.target);
+      }).bind(this));
+      
+      Object.freeze(this);
+  }
 
-  Object.defineProperty(EventDelegation, 'handlers', {
-    get: function(){
-      return Object.create(handlers);
-    }
-  });
-
-  Object.freeze(EventDelegation);
-  window.events = EventDelegation;
+  EventDelegation.prototype.removeAllEvents = _removeAllEvents;
+  EventDelegation.prototype.off = _off;
+  EventDelegation.prototype.on = _on;
+  EventDelegation.prototype.removeAllFor = _removeAllFor;
+  window.EventDelegation = EventDelegation;
 })();
