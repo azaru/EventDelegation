@@ -99,7 +99,7 @@
           return target == selector;
         }
       }else if(matcher){ 
-        return target[_matcher.name](selector);
+        return _matcher.call(target, selector);
       }else{
         return false;
       }
@@ -124,8 +124,17 @@
     }
   };
 
+  var _chooseRootNode = function(rootNode){
+    if(typeof rootNode === "string")
+      return document.getElementById(rootNode);
+    if(typeof rootNode === "object")
+      return rootNode;
+
+    return document;
+  }
+
   var EventDelegation = function(rootNode){
-      this.rootNode = rootNode || document;
+      this.rootNode = _chooseRootNode(rootNode);
       this.handlers = {};
       this.rootNode.addEventListener('DOMNodeRemoved', (function(event){
         _removeAllFor.call(this, event.target);
@@ -138,5 +147,6 @@
   EventDelegation.prototype.off = _off;
   EventDelegation.prototype.on = _on;
   EventDelegation.prototype.removeAllFor = _removeAllFor;
+
   window.EventDelegation = EventDelegation;
 })();
