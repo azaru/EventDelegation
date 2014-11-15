@@ -1,8 +1,10 @@
 (function(){
   'use strict';
   
-  var _matcher = Element.prototype.matches || Element.prototype.webkitMatchesSelector
-    || Element.prototype.mozMatchesSelector || Element.prototype.msMatchesSelector 
+  var _matcher = Element.prototype.matches 
+    || Element.prototype.webkitMatchesSelector
+    || Element.prototype.mozMatchesSelector 
+    || Element.prototype.msMatchesSelector 
     || Element.prototype.oMatchesSelector;
 
   var _on = function (eventType ,selector ,handler){
@@ -13,7 +15,8 @@
 
   var _off= function (eventType, selector, handler){
     _paramsCheck(arguments, 2);
-    var allRemoved = _removeHandlersFromSelectors.call(this, eventType, selector, handler);
+    var args = [eventType, selector, handler];
+    var allRemoved = _removeHandlersFromSelectors.apply(this, args);
     if(allRemoved){
       _removeEventListener.call(this, eventType);
     }
@@ -54,8 +57,8 @@
         return ;
       }
     }
-
-    this.handlers[eventType].push({"selector": selector, "callbacks": [handler]});
+    var newSelector = {"selector": selector, "callbacks": [handler]};
+    this.handlers[eventType].push(newSelector);
   }
 
   var _paramsCheck = function(args, num){
@@ -71,14 +74,14 @@
   };
 
   var _removeEventListener = function(eventType){
-    document.removeEventListener(eventType, _trigger.bind(this));
+    this.rootNode.removeEventListener(eventType, _trigger.bind(this));
     delete this.handlers[eventType];
   };
 
   var _addListenerIfNeeded = function(eventType){
     if(!this.handlers[eventType]){
       this.handlers[eventType] = [];
-      document.addEventListener(eventType, _trigger.bind(this));
+      this.rootNode.addEventListener(eventType, _trigger.bind(this));
     }
   };
 
