@@ -30,9 +30,18 @@ describe("Event Delegation - ", function() {
       events.off('click', '#out', myCallback);
       expect(events.handlers.click).toEqual(undefined);
     });
+    it('Should be able to remove events with selector & eventType', function(){
+      events.off('click', '#out');
+      expect(events.handlers.click).toEqual(undefined);
+    });
 
     it('Should be able to remove last event', function(){
-      events.off('click', '#out');
+      events.off('#out');
+      expect(events.handlers.click).toEqual(undefined);
+    });
+
+    it('Should be able to remove all events', function(){
+      events.off();
       expect(events.handlers.click).toEqual(undefined);
     });
 
@@ -82,8 +91,13 @@ describe("Event Delegation - ", function() {
       expect(events.handlers.click).toEqual(undefined);
     });
 
-    it('Should be able to remove last event', function(){
+    it('Should be able to remove events with selector & eventType', function(){
       events.off('click', out);
+      expect(events.handlers.click).toEqual(undefined);
+    });
+
+    it('Should be able to remove last event', function(){
+      events.off(out);
       expect(events.handlers.click).toEqual(undefined);
     });
 
@@ -231,7 +245,7 @@ describe("Event Delegation - ", function() {
   });
 
   describe("Internals", function(){
-    xit('Internal handlers is read only',function(){
+    it('Internal handlers is read only',function(){
       events.on('click','#out',function(){ console.log('la');});
       events.handlers = undefined;
       events.handlers.click = undefined;
@@ -249,16 +263,6 @@ describe("Event Delegation - ", function() {
       expect(events.off).not.toEqual(undefined);
     });
 
-    it('.removeAllEvents internal function is read only',function(){
-      events.removeAllEvents = undefined;
-      expect(events.removeAllEvents).not.toEqual(undefined);
-    });
-
-    it('.removeAllFor internal function is read only',function(){
-      events.removeAllFor = undefined;
-      expect(events.removeAllFor).not.toEqual(undefined);
-    });
-
     it('.on raise an error with less than 3 parameters',function(){
       var onClickWith1Args = function(){
         events.on('click');
@@ -268,20 +272,6 @@ describe("Event Delegation - ", function() {
       }
       expect(onClickWith1Args).toThrow();
       expect(onClickWith2Args).toThrow();
-    });
-
-    it('.off raise an error with less than 2 parameters',function(){
-      var offClickWith1Args = function(){
-        events.off('click');
-      }
-      expect(offClickWith1Args).toThrow();
-    });
-
-    it('.removeAllFor raise an error with less than 3 parameters',function(){
-      var removeAllForWith0Args = function(){
-        events.removeAllFor();
-      }
-      expect(removeAllForWith0Args).toThrow();
     });
 
   });

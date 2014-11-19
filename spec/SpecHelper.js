@@ -6,7 +6,7 @@ function addNewNode(nodeType, id, parent){
 }
 
 afterEach(function(){
-  events.removeAllEvents();
+  events.off();
   var out = document.getElementById('out');
   if(out){out.remove();}
 });
