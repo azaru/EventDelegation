@@ -6,7 +6,7 @@ function addNewNode(nodeType, id, parent){
 }
 
 afterEach(function(){
-  events.removeAllEvents();
+  events.off();
   var out = document.getElementById('out');
   if(out){out.remove();}
 });
@@ -14,4 +14,5 @@ afterEach(function(){
 beforeEach(function(){
   var nodeOut = addNewNode('span', 'out', document.body);
   addNewNode('span', 'in', nodeOut);
+  window.events = new EventDelegation();
 });
