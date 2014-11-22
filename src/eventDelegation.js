@@ -40,32 +40,48 @@
 
   var _removeHandlersFromSelectors = function(uuid, eventType, selector, handler){
     var handlers = rootHandler[uuid].handlers;
-    var callbacks = [];
-    for(var i in handlers[eventType]){
-      if(_match(selector, handlers[eventType][i].selector, false)){
-        _removeHandler(handlers[eventType][i].callbacks, handler); 
-      }
-      callbacks = callbacks.concat(handlers[eventType][i].callbacks);
-      if(handlers[eventType][i].callbacks.length === 0){
-          handlers[eventType].splice(i, 1);
-      }
+    var key = _keyForSelector(selector);
+    if(!handlers[eventType] || !handlers[eventType][key])
+      return;
+
+    _removeHandler(handlers[eventType][key].callbacks, handler);
+    if(handlers[eventType][key].callbacks.length === 0){
+         delete handlers[eventType][key];
     }
-     if(callbacks.length === 0){
+    
+    if(_objectCount(handlers[eventType]) === 0){
       _removeEventListener(uuid, eventType);
     }
   }
-
+  var _objectCount = function(obj){
+    var count = 0;
+    for(var key in obj){
+      if(obj.hasOwnProperty(key))
+        count++;
+    }
+    return count;
+  }
+  // TO-DO improve performance, use uuid or improve for CSS-Selectors
   var _addHandlerToSelector = function(uuid, eventType, selector, handler){
-    var handlers = rootHandler[uuid].handlers;
-    for(var i in handlers[eventType]){
-      if(_match(selector, handlers[eventType][i].selector, false)){
-        handlers[eventType][i].callbacks.push(handler);
-        return ;
-      }
+    var handlers = rootHandler[uuid].handlers, done;
+    var key = _keyForSelector(selector);
+    if(handlers[eventType][key]){
+      handlers[eventType][key].callbacks.push(handler);
+      return
     }
     var newSelector = {"selector": selector, "callbacks": [handler]};
-    handlers[eventType].push(newSelector);
-  }
+    handlers[eventType][key] = newSelector;
+  };
+
+  var _keyForSelector = function(selector){
+    if(typeof selector === "string")
+      return selector
+    if(typeof selector === "object"){
+      var euuid = selector.getAttribute('data-euuid') || generateUUID();
+      selector.setAttribute('data-euuid', euuid);
+      return euuid;
+    }
+  };
 
   var _paramsCheck = function(args, num){
     if(args.length < num)
@@ -90,7 +106,7 @@
     var rootNode = rootHandler[uuid].rootNode;
     var handlers = rootHandler[uuid].handlers;
     if(!handlers[eventType]){
-      handlers[eventType] = [];
+      handlers[eventType] = {};
       rootNode.addEventListener(eventType, _trigger.bind({}, uuid));
     }
   };
@@ -167,7 +183,18 @@
         get: function(){
           return Object.create(rootHandler[uuid].handlers);
         }
-      })
+      });
+      Object.defineProperty(this, 'handlersCount', {
+        get: function(){
+          var count = 0;
+          for(var handlerType in rootHandler[uuid].handlers){
+            for(var handler in rootHandler[uuid].handlers[handlerType]){
+              count++;
+            }
+          }
+          return count;
+        }
+      });
       rootNode.addEventListener('DOMNodeRemoved',function(event){
         _removeAllFor(uuid, event.target);
       });

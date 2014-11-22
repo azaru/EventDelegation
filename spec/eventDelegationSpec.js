@@ -1,10 +1,7 @@
 describe("Event Delegation - ", function() {
   
-
-
   describe('Add and delete events & callbacks by CSS Selector', function(){
     
-
     function myCallback(){
       console.log('yeah');
     }
@@ -14,12 +11,12 @@ describe("Event Delegation - ", function() {
     });
 
     it('Should be able to add an event', function(){
-      expect(events.handlers.click.length).toEqual(1);
+      expect(events.handlersCount).toEqual(1);
     });
 
     it('Should be able to save a callback', function(){
-      expect(typeof events.handlers.click[0].callbacks[0]).toEqual('function');
-      expect(events.handlers.click[0].callbacks[0]).toEqual(myCallback);
+      expect(typeof events.handlers.click['#out'].callbacks[0]).toEqual('function');
+      expect(events.handlers.click['#out'].callbacks[0]).toEqual(myCallback);
     });
 
     it('Should be able to save the correct event type', function(){
@@ -47,13 +44,13 @@ describe("Event Delegation - ", function() {
 
     it('Should be able to add more than one event to same css Selector', function(){
       events.on('click', '#out', myCallback);
-      var out_events_number = events.handlers.click[0].callbacks.length;
+      var out_events_number = events.handlers.click['#out'].callbacks.length;
       expect(out_events_number).toEqual(2);
     });
 
     it('Should be able to add more than one event to diferent css Selector', function(){
       events.on('click', '#in', myCallback);
-      var out_events_number = events.handlers.click.length;
+      var out_events_number = events.handlersCount;
       expect(out_events_number).toEqual(2);
     });
 
@@ -74,12 +71,13 @@ describe("Event Delegation - ", function() {
     });
 
     it('Should be able to add an event', function(){
-      expect(events.handlers.click.length).toEqual(1);
+      expect(events.handlersCount).toEqual(1);
     });
 
     it('Should be able to save a callback', function(){
-      expect(typeof events.handlers.click[0].callbacks[0]).toEqual('function');
-      expect(events.handlers.click[0].callbacks[0]).toEqual(myCallback);
+      var euuid = out.getAttribute('data-euuid');
+      expect(typeof events.handlers.click[euuid].callbacks[0]).toEqual('function');
+      expect(events.handlers.click[euuid].callbacks[0]).toEqual(myCallback);
     });
 
     it('Should be able to save the correct event type', function(){
@@ -103,14 +101,15 @@ describe("Event Delegation - ", function() {
 
     it('Should be able to add more than one event to same HTML Object', function(){
       events.on('click', out, myCallback);
-      var out_events_number = events.handlers.click[0].callbacks.length;
+      var euuid = out.getAttribute('data-euuid');
+      var out_events_number = events.handlers.click[euuid].callbacks.length;
       expect(out_events_number).toEqual(2);
     });
 
     it('Should be able to add more than one event to diferent HTML Object', function(){
       var inner = document.getElementById('in');
       events.on('click', inner, myCallback);
-      var out_events_number = events.handlers.click.length;
+      var out_events_number = events.handlersCount;
       expect(out_events_number).toEqual(2);
     });
 
@@ -130,116 +129,81 @@ describe("Event Delegation - ", function() {
       var inner = document.getElementById('in');
       events.on('click', inner, myCallback);
       inner.remove();
-      expect(events.handlers.click.length).toEqual(1);
+      expect(events.handlersCount).toEqual(1);
     });
 
   });
   
-  describe('Trigger callbacks', function(){
-    var out;
+  xdescribe('Trigger callbacks', function(){
+    var out, inner, that = {fn: function(){}, fn2: function(){}};
 
     beforeEach(function(){
       out =  document.getElementById('out');
+      inner = document.getElementById('in');
+      spyOn(that,"fn");
+      spyOn(that,"fn2");
     });
 
     it('Should be able to trigger a callback when the event is fired - HTML Element', function(){
-      var trigger = false;
-      events.on('click', out, function(){
-        trigger = true;
-      });
+      events.on('click', out, that.fn);
       out.click();
-      expect(trigger).toEqual(true);
+      expect(that.fn).toHaveBeenCalled();
+      
     });
 
     it('Should be able to trigger a callback when the event is fired - CSS Selector', function(){
-      var trigger = false;
-      events.on('click', '#out', function(){
-        trigger = true;
-      });
+      events.on('click', '#out', that.fn);
       out.click();
-      expect(trigger).toEqual(true);
+      expect(that.fn).toHaveBeenCalled();
     });
 
     it("Shouldn't be able to trigger a callback without the event - HTML Element", function(){
-      var trigger = false;
-      events.on('click', out, function(){
-        trigger = true;
-      });
-      expect(trigger).toEqual(false);
+      events.on('click', out, that.fn);
+      expect(that.fn).not.toHaveBeenCalled();
     });
     it("Shouldn't be able to trigger a callback without the event - CSS Selector", function(){
-      var trigger = false;
-      events.on('click', '#out', function(){
-        trigger = true;
-      });
-      expect(trigger).toEqual(false);
+      events.on('click', "#out", that.fn);
+      expect(that.fn).not.toHaveBeenCalled();
     });
 
     it("Shouldn't be able to trigger a callback without the event (even with childred firing it) - HTML Element", function(){
-      var trigger = false;
-      events.on('click', out, function(){
-        trigger = true;
-      });
-      var inner = document.getElementById('in');
+      events.on('click', out, that.fn);
       inner.click();
-      expect(trigger).toEqual(false);
+      expect(that.fn).not.toHaveBeenCalled();
     });
 
     it("Shouldn't be able to trigger a callback without the event (even with childred firing it) - CSS Selector", function(){
-      var trigger = false;
-      events.on('click', '#out', function(){
-        trigger = true;
-      });
-      var inner = document.getElementById('in');
+      events.on('click', "#out", that.fn);
       inner.click();
-      expect(trigger).toEqual(false);
+      expect(that.fn).not.toHaveBeenCalled();
     });
 
     it("Shouldn't be able to trigger a callback without the event (even with parent firing it) - HTML Element", function(){
-      var trigger = false;
-      var inner = document.getElementById('in');
-      events.on('click', inner, function(){
-        trigger = true;
-      });
-      
+      events.on('click', inner, that.fn);
       out.click();
-      expect(trigger).toEqual(false);
+      expect(that.fn).not.toHaveBeenCalled();
     });
 
     it("Shouldn't be able to trigger a callback without the event (even with parent firing it) - CSS Selector", function(){
-      var trigger = false;
-      var inner = document.getElementById('in');
-      events.on('click', '#in', function(){
-        trigger = true;
-      });
-      
+      events.on('click', "#in", that.fn);
       out.click();
-      expect(trigger).toEqual(false);
+      expect(that.fn).not.toHaveBeenCalled();
     });
 
-     it("Should be able to trigger more than one callback - HTML Elements", function(){
-      var trigger = false, trigger2 = false;
-      events.on('click', out, function(){
-        trigger = true;
-      });
-      events.on('click', out, function(){
-        trigger2 = true;
-      });
-      
+    it("Should be able to trigger more than one callback - HTML Elements", function(){
+      events.on('click', out, that.fn);
+      events.on('click', out, that.fn2);
       out.click();
-      expect(trigger && trigger2).toEqual(true);
+      expect(that.fn).toHaveBeenCalled();
+      expect(that.fn2).toHaveBeenCalled();
     });
-     it("Should be able to trigger more than one callback - CSS Selectors", function(){
-      var trigger = false, trigger2 = false;
-      events.on('click', '#out', function(){
-        trigger = true;
-      });
-      events.on('click', '#out', function(){
-        trigger2 = true;
-      });
-      
+
+    it("Should be able to trigger more than one callback - CSS Selectors", function(){
+      events.on('click', "#out", that.fn);
+      events.on('click', "#out", that.fn2);
       out.click();
-      expect(trigger && trigger2).toEqual(true);
+      expect(that.fn && that.fn2).toHaveBeenCalled();
+      expect(that.fn2).toHaveBeenCalled();
     });
 
   });
@@ -276,4 +240,92 @@ describe("Event Delegation - ", function() {
 
   });
 
+  xdescribe("Performance",function(){
+    allEvents = [];
+    beforeEach(function(){
+      var inner = document.getElementById('in');
+      var next = inner;
+      for(var i=0; i<1000; i++){
+        next = addNewNode('span','sub'+i, next);
+      }
+      for(var i=0; i<1000; i++){
+        var rand = document.getElementById('sub'+i)
+        allEvents.push(rand);
+      }
+    });
+    it('set 1000 events at diferent Elements (x25)',function(){
+      
+      var timer1 = timeFor(function(){
+        for(var i in allEvents){
+          events.on('click', allEvents[i], function(){
+            a += 1;
+          });
+        }
+      });
+      var handlers = events.handlers;
+      events.off();
+      var timer2 = timeFor(function(){
+        for(var i in allEvents){
+          allEvents[i].addEventListener('click', function(){
+            var a = 1;
+          });
+        }
+      });
+      
+      expect(timer1).toBeLessThan(timer2 * 25);
+    });
+
+    it('set 1000 events at same Element (x1.1)',function(){
+      
+      var timer1 = timeFor(function(){
+        for(var i=0; i<1000; i++){
+          events.on('click', allEvents[0], function(){
+            a += 1;
+          });
+        }
+      });
+      
+      events.off();
+      var timer2 = timeFor(function(){
+        for(var i=0; i<1000; i++){
+          allEvents[0].addEventListener('click', function(){
+            var a = 1;
+          });
+        }
+      });
+      
+      var handlers = events.handlers;
+      expect(timer1).toBeLessThan(timer2 * 1.1);
+    });
+
+    it('trigger 1000 events - diferent elements (x1)',function(){
+      for(var i in allEvents){
+        events.on('click', allEvents[i], function(){
+          var a = 1;
+        });
+      }
+      
+      var timer1 = timeFor(function(){
+        for(var i in allEvents){
+          allEvents[i].click();
+        }
+      });
+
+      events.off();
+      
+      for(var i in allEvents){
+        allEvents[i].addEventListener('click', function(){
+          var a = 1;
+        });
+      }
+      
+      var timer2 = timeFor(function(){
+        for(var i in allEvents){
+          allEvents[i].click();
+        }
+      });
+      var handlers = events.handlers;
+      expect(timer1).toBeLessThan(timer2);
+    });
+  });
 });
