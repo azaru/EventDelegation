@@ -134,7 +134,7 @@ describe("Event Delegation - ", function() {
 
   });
   
-  xdescribe('Trigger callbacks', function(){
+  describe('Trigger callbacks', function(){
     var out, inner, that = {fn: function(){}, fn2: function(){}};
 
     beforeEach(function(){
@@ -253,7 +253,7 @@ describe("Event Delegation - ", function() {
         allEvents.push(rand);
       }
     });
-    it('set 1000 events at diferent Elements (x25)',function(){
+    xit('set 1000 events at diferent Elements (x25)',function(){
       
       var timer1 = timeFor(function(){
         for(var i in allEvents){
@@ -275,7 +275,7 @@ describe("Event Delegation - ", function() {
       expect(timer1).toBeLessThan(timer2 * 25);
     });
 
-    it('set 1000 events at same Element (x1.1)',function(){
+    xit('set 1000 events at same Element (x1.1)',function(){
       
       var timer1 = timeFor(function(){
         for(var i=0; i<1000; i++){

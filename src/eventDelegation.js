@@ -61,7 +61,7 @@
     }
     return count;
   }
-  // TO-DO improve performance, use uuid or improve for CSS-Selectors
+
   var _addHandlerToSelector = function(uuid, eventType, selector, handler){
     var handlers = rootHandler[uuid].handlers, done;
     var key = _keyForSelector(selector);
@@ -113,25 +113,25 @@
 
   var _removeHandler  = function(callbacks, handler){
     for(var x = callbacks.length - 1; x >= 0; x--) {
-        if(!handler || callbacks[x] === handler) {
-          callbacks.splice(x, 1);
-        }
+      if(!handler || callbacks[x] === handler) {
+        callbacks.splice(x, 1);
+      }
     }
     return callbacks;
   };    
   
   var _match = function(target, selector, matcher){
-      if(typeof selector == typeof target){
-        if(typeof selector == 'object'){
-          return target.isSameNode(selector);
-        }else{
-          return target == selector;
-        }
-      }else if(matcher){ 
-        return _matcher.call(target, selector);
+    if(typeof selector == typeof target){
+      if(typeof selector == 'object'){
+        return target.isSameNode(selector);
       }else{
-        return false;
+        return target == selector;
       }
+    }else if(matcher){ 
+      return _matcher.call(target, selector);
+    }else{
+      return false;
+    }
   };
 
   var _applyHandlers = function(callbacks, target, args){
@@ -165,42 +165,50 @@
   var generateUUID =function (){
     var d = new Date().getTime();
     var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        var r = (d + Math.random()*16)%16 | 0;
-        d = Math.floor(d/16);
-        return (c=='x' ? r : (r&0x3|0x8)).toString(16);
+      var r = (d + Math.random()*16)%16 | 0;
+      d = Math.floor(d/16);
+      return (c=='x' ? r : (r&0x3|0x8)).toString(16);
     });
     return uuid;
   };
-
-  var EventDelegation = function(rootNode){
-      rootNode = _chooseRootNode(rootNode);
-      var uuid = this.uuid = generateUUID();
-      rootHandler[this.uuid] = {
-        rootNode: rootNode,
-        handlers: {}
-      }
-      Object.defineProperty(this, 'handlers', {
-        get: function(){
-          return Object.create(rootHandler[uuid].handlers);
-        }
-      });
-      Object.defineProperty(this, 'handlersCount', {
-        get: function(){
-          var count = 0;
-          for(var handlerType in rootHandler[uuid].handlers){
-            for(var handler in rootHandler[uuid].handlers[handlerType]){
-              count++;
-            }
-          }
-          return count;
-        }
-      });
-      rootNode.addEventListener('DOMNodeRemoved',function(event){
-        _removeAllFor(uuid, event.target);
-      });
-      
-      Object.freeze(this);
+  var _removeAllForAndChilds = function(uuid, element){
+    _removeAllFor(uuid, element);
+    for(var i = 0; i < element.childElementCount; i++){
+     _removeAllForAndChilds(uuid, element.children[i]);
+    }
   }
+  var EventDelegation = function(rootNode){
+    rootNode = _chooseRootNode(rootNode);
+    var uuid = this.uuid = generateUUID();
+    rootHandler[this.uuid] = {
+      rootNode: rootNode,
+      handlers: {}
+    }
+    
+    rootNode.addEventListener('DOMNodeRemoved',function(event){
+      _removeAllForAndChilds(uuid, event.target);
+    });
+    
+    Object.freeze(this);
+  }
+
+  Object.defineProperty(EventDelegation.prototype, 'handlers', {
+    get: function(){
+      return Object.create(rootHandler[this.uuid].handlers);
+    }
+  });
+
+  Object.defineProperty(EventDelegation.prototype, 'handlersCount', {
+    get: function(){
+      var count = 0;
+      for(var handlerType in rootHandler[this.uuid].handlers){
+        for(var handler in rootHandler[this.uuid].handlers[handlerType]){
+          count++;
+        }
+      }
+      return count;
+    }
+  });
 
   EventDelegation.prototype.off = _off;
   EventDelegation.prototype.on = _on;
