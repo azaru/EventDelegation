@@ -1,7 +1,8 @@
-describe("Event Delegation - ", function() {
+'use stric';
+describe('Event Delegation - ', function() {
   
   describe('Add and delete events & callbacks by CSS Selector', function(){
-    
+      
     function myCallback(){
       console.log('yeah');
     }
@@ -140,8 +141,8 @@ describe("Event Delegation - ", function() {
     beforeEach(function(){
       out =  document.getElementById('out');
       inner = document.getElementById('in');
-      spyOn(that,"fn");
-      spyOn(that,"fn2");
+      spyOn(that,"fn").and.callThrough();
+      spyOn(that,"fn2").and.callThrough();
     });
 
     it('Should be able to trigger a callback when the event is fired - HTML Element', function(){
@@ -202,8 +203,28 @@ describe("Event Delegation - ", function() {
       events.on('click', "#out", that.fn);
       events.on('click', "#out", that.fn2);
       out.click();
-      expect(that.fn && that.fn2).toHaveBeenCalled();
+      expect(that.fn).toHaveBeenCalled();
       expect(that.fn2).toHaveBeenCalled();
+    });
+
+    it("Should be able to trigger only the first callback if return false - HTML Elements", function(){
+      that.fn = function(){return false;};
+      spyOn(that,"fn").and.callThrough();
+      events.on('click', out, that.fn);
+      events.on('click', out, that.fn2);
+      out.click();
+      expect(that.fn).toHaveBeenCalled();
+      expect(that.fn2).not.toHaveBeenCalled();
+    });
+
+    it("Should be able to trigger only the first callback if return false - CSS Selectors", function(){
+      that.fn = function(){return false;};
+      spyOn(that,"fn").and.callThrough();
+      events.on('click', "#out", that.fn);
+      events.on('click', "#out", that.fn2);
+      out.click();
+      expect(that.fn).toHaveBeenCalled();
+      expect(that.fn2).not.toHaveBeenCalled();
     });
 
   });
@@ -298,7 +319,7 @@ describe("Event Delegation - ", function() {
       expect(timer1).toBeLessThan(timer2 * 1.1);
     });
 
-    it('trigger 1000 events - diferent elements (x1)',function(){
+    xit('trigger 1000 events - diferent elements (x1)',function(){
       for(var i in allEvents){
         events.on('click', allEvents[i], function(){
           var a = 1;

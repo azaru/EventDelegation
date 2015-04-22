@@ -1,11 +1,12 @@
-(function(){
+(function(global){
   'use strict';
   
-  var _matcher = Element.prototype.matches 
-    || Element.prototype.webkitMatchesSelector
-    || Element.prototype.mozMatchesSelector 
-    || Element.prototype.msMatchesSelector 
-    || Element.prototype.oMatchesSelector;
+  var _matcher = Element.prototype.matches  ||
+    Element.prototype.matchesSelector       ||
+    Element.prototype.webkitMatchesSelector || 
+    Element.prototype.mozMatchesSelector    ||
+    Element.prototype.msMatchesSelector     ||
+    Element.prototype.oMatchesSelector;
   var rootHandler = {};
 
   var _on = function (eventType ,selector ,handler){
@@ -16,9 +17,9 @@
 
   var _off= function (eventType, selector, handler){
     var argLength = arguments.length, uuid = this.uuid;
-    if(argLength == 0)
+    if(argLength === 0)
       _removeAllEvents(uuid);
-    if(argLength == 1){
+    if(argLength === 1){
       selector = eventType;
       _removeAllFor(uuid, selector);
     }
@@ -34,7 +35,7 @@
 
   var _removeAllFor = function (uuid, selector){
     for(var key in rootHandler[uuid].handlers){
-      _removeHandlersFromSelectors(uuid, key, selector)
+      _removeHandlersFromSelectors(uuid, key, selector);
     }
   };
 
@@ -52,7 +53,7 @@
     if(_objectCount(handlers[eventType]) === 0){
       _removeEventListener(uuid, eventType);
     }
-  }
+  };
   var _objectCount = function(obj){
     var count = 0;
     for(var key in obj){
@@ -60,23 +61,23 @@
         count++;
     }
     return count;
-  }
+  };
 
   var _addHandlerToSelector = function(uuid, eventType, selector, handler){
-    var handlers = rootHandler[uuid].handlers, done;
+    var handlers = rootHandler[uuid].handlers;
     var key = _keyForSelector(selector);
     if(handlers[eventType][key]){
       handlers[eventType][key].callbacks.push(handler);
-      return
+      return;
     }
-    var newSelector = {"selector": selector, "callbacks": [handler]};
+    var newSelector = {'selector': selector, 'callbacks': [handler]};
     handlers[eventType][key] = newSelector;
   };
 
   var _keyForSelector = function(selector){
-    if(typeof selector === "string")
-      return selector
-    if(typeof selector === "object"){
+    if(typeof selector === 'string')
+      return selector;
+    if(typeof selector === 'object'){
       var euuid = selector.getAttribute('data-euuid') || generateUUID();
       selector.setAttribute('data-euuid', euuid);
       return euuid;
@@ -134,9 +135,10 @@
     }
   };
 
-  var _applyHandlers = function(callbacks, target, args){
+  var _applyHandlers = function(callbacks, event){
     for(var i=0; i < callbacks.length; i++){
-        callbacks[i].apply(target, args);
+      if(callbacks[i].call(event.target, event) === false)
+        return;
     }
   };
 
@@ -145,23 +147,26 @@
     if(handlers[event.type]){
       var args = Array.prototype.slice.call(arguments);
       var _handlers = handlers[event.type];
-
+      var finalHandlers = [];
       for(var key in _handlers){   
         if(_match(event.target, _handlers[key].selector, true)){
-          _applyHandlers(_handlers[key].callbacks, event.target, args);
+          _handlers[key].callbacks.forEach(function(callback){
+            finalHandlers.push(callback);
+          })
         }
       }
+      _applyHandlers(finalHandlers, event);
     }
   };
 
   var _chooseRootNode = function(rootNode){
-    if(typeof rootNode === "string")
+    if(typeof rootNode === 'string')
       return document.getElementById(rootNode);
-    if(typeof rootNode === "object")
+    if(typeof rootNode === 'object')
       return rootNode;
 
     return document;
-  }
+  };
   var generateUUID =function (){
     var d = new Date().getTime();
     var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -176,21 +181,21 @@
     for(var i = 0; i < element.childElementCount; i++){
      _removeAllForAndChilds(uuid, element.children[i]);
     }
-  }
+  };
   var EventDelegation = function(rootNode){
     rootNode = _chooseRootNode(rootNode);
     var uuid = this.uuid = generateUUID();
     rootHandler[this.uuid] = {
       rootNode: rootNode,
       handlers: {}
-    }
+    };
     
     rootNode.addEventListener('DOMNodeRemoved',function(event){
       _removeAllForAndChilds(uuid, event.target);
     });
     
     Object.freeze(this);
-  }
+  };
 
   Object.defineProperty(EventDelegation.prototype, 'handlers', {
     get: function(){
@@ -213,5 +218,5 @@
   EventDelegation.prototype.off = _off;
   EventDelegation.prototype.on = _on;
 
-  window.EventDelegation = EventDelegation;
-})();
+  global.EventDelegation = EventDelegation;
+})(this);
